@@ -102,21 +102,21 @@ def main():
     print("⚠ Phase 1 training is commented out. Uncomment in main() if desired.")
 
     # Uncomment below to run Phase 1 training:
-    # optimizer_phase_1 = create_optimizer_for_classifier(model, PHASE1_LR)
-    # ensure_directories_exist([PHASE1_CHECKPOINTS])
-    # model = train_model(
-    #     model=model,
-    #     train_loader=train_loader,
-    #     val_loader=val_loader,
-    #     criterion=criterion,
-    #     optimizer=optimizer_phase_1,
-    #     device=DEVICE,
-    #     scheduler=None,
-    #     num_epochs=5,
-    #     checkpoint_dir=PHASE1_CHECKPOINTS,
-    #     validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase1'),
-    #     start_epoch=0
-    # )
+    optimizer_phase_1 = create_optimizer_for_classifier(model, PHASE1_LR)
+    ensure_directories_exist([PHASE1_CHECKPOINTS])
+    model = train_model(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        criterion=criterion,
+        optimizer=optimizer_phase_1,
+        device=DEVICE,
+        scheduler=None,
+        num_epochs=5,
+        checkpoint_dir=PHASE1_CHECKPOINTS,
+        validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase1'),
+        start_epoch=0
+    )
 
     # ============================================================
     # STEP 5: TRAINING PHASE 2 (Optional - currently commented out)
@@ -125,24 +125,24 @@ def main():
     print("⚠ Phase 2 training is commented out. Uncomment in main() if desired.")
 
     # Uncomment below to run Phase 2 training:
-    # print("\nUnfreezing model for Phase 2...")
-    # unfreeze_model_weights(model)
-    # optimizer_phase_2 = create_optimizer(model, PHASE2_LR)
-    # scheduler = create_scheduler(optimizer_phase_2)
-    # ensure_directories_exist([PHASE2_CHECKPOINTS])
-    # model = train_model(
-    #     model=model,
-    #     train_loader=train_loader,
-    #     val_loader=val_loader,
-    #     criterion=criterion,
-    #     optimizer=optimizer_phase_2,
-    #     device=DEVICE,
-    #     scheduler=scheduler,
-    #     num_epochs=20,
-    #     checkpoint_dir=PHASE2_CHECKPOINTS,
-    #     validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase2'),
-    #     start_epoch=5
-    # )
+    print("\nUnfreezing model for Phase 2...")
+    unfreeze_model_weights(model)
+    optimizer_phase_2 = create_optimizer(model, PHASE2_LR)
+    scheduler = create_scheduler(optimizer_phase_2)
+    ensure_directories_exist([PHASE2_CHECKPOINTS])
+    model = train_model(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        criterion=criterion,
+        optimizer=optimizer_phase_2,
+        device=DEVICE,
+        scheduler=scheduler,
+        num_epochs=20,
+        checkpoint_dir=PHASE2_CHECKPOINTS,
+        validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase2'),
+        start_epoch=5
+    )
 
     # ============================================================
     # STEP 6: VALIDATION WITH THRESHOLD RANGE (Example)
@@ -150,9 +150,9 @@ def main():
     print("\n[*] Running validation with single threshold...")
     
     # Load model from Phase 2 checkpoint epoch 20
-    print("\nLoading model from Phase 2 checkpoint (epoch 20)...")
-    checkpoint_path = os.path.join(PHASE2_CHECKPOINTS, 'checkpoint_epoch_20.pt')
-    model, _, _, epoch, loss = load_checkpoint(checkpoint_path, model, optimizer=None, scheduler=None, device=DEVICE)
+    # print("\nLoading model from Phase 2 checkpoint (epoch 20)...")
+    # checkpoint_path = os.path.join(PHASE2_CHECKPOINTS, 'checkpoint_epoch_20.pt')
+    # model, _, _, epoch, loss = load_checkpoint(checkpoint_path, model, optimizer=None, scheduler=None, device=DEVICE)
     
     # Uncomment below to run threshold range validation:
     # ensure_directories_exist([VALIDATION_THRESHOLDS_DIR])
@@ -170,6 +170,12 @@ def main():
     # Run single validation as example
     print("\nExample: Running validation with threshold=0.3")
     results = validate_model(model, val_loader, criterion, DEVICE, threshold=0.3)
+
+    print("="*20, "CHUJ", "="*20)
+    print("="*60)
+    print(results)
+    print("="*60)
+
     print("\nValidation Results:")
     for key, value in results.items():
         if isinstance(value, list):

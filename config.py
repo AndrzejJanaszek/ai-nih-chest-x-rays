@@ -39,10 +39,8 @@ VALIDATION_THRESHOLDS_DIR = os.path.join(SRC_DIR, 'validation_thresholds')
 # ============================================================
 
 ALL_LABELS = [
-    'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration',
-    'Mass', 'Nodule', 'Pneumonia', 'Pneumothorax',
-    'Consolidation', 'Edema', 'Emphysema', 'Fibrosis',
-    'Pleural_Thickening', 'Hernia'
+    'Atelectasis', 'Effusion', 'Infiltration', 'Mass',
+    'Nodule', 'Pneumothorax', 'Consolidation', 'Pleural_Thickening'
 ]
 NUM_CLASSES = len(ALL_LABELS)
 
@@ -61,7 +59,7 @@ PHASE1_LR = 1e-3
 PHASE2_LR = 1e-5
 
 # Model parameters
-IMAGE_SIZE = 224
+IMAGE_SIZE = 256
 RESIZE_SIZE = 256
 NORMALIZATION_MEAN = [0.485, 0.456, 0.406]
 NORMALIZATION_STD = [0.229, 0.224, 0.225]

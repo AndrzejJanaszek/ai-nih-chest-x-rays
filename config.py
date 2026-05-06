@@ -1,0 +1,88 @@
+"""
+Configuration file for the DenseNet-121 model training pipeline.
+Contains all constants, paths, and hyperparameters.
+"""
+
+import os
+import torch
+from pathlib import Path
+
+# ============================================================
+# PATHS CONFIGURATION
+# ============================================================
+
+# Get the project root directory
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+SRC_DIR = os.path.join(PROJECT_ROOT, 'src')
+
+# Data paths
+DATA_PATH = os.path.join(PROJECT_ROOT, 'data')
+IMAGES_PATH = os.path.join(DATA_PATH, 'rescaled_data')
+CSV_FILE_PATH = os.path.join(DATA_PATH, 'Data_Entry_2017.csv')
+
+# Training list paths
+TRAIN_LIST_PATH = os.path.join(DATA_PATH, 'train_list.txt')
+VAL_LIST_PATH = os.path.join(DATA_PATH, 'validation_list.txt')
+TEST_LIST_PATH = os.path.join(DATA_PATH, 'test_list.txt')
+
+# Checkpoint paths
+CHECKPOINTS_DIR = os.path.join(SRC_DIR, 'checkpoints')
+PHASE1_CHECKPOINTS = os.path.join(CHECKPOINTS_DIR, 'phase1')
+PHASE2_CHECKPOINTS = os.path.join(CHECKPOINTS_DIR, 'phase2')
+
+# Validation/Training results paths
+TRAINING_VALIDATIONS_DIR = os.path.join(SRC_DIR, 'training_validations')
+VALIDATION_THRESHOLDS_DIR = os.path.join(SRC_DIR, 'validation_thresholds')
+
+# ============================================================
+# LABELS & CLASSES CONFIGURATION
+# ============================================================
+
+ALL_LABELS = [
+    'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration',
+    'Mass', 'Nodule', 'Pneumonia', 'Pneumothorax',
+    'Consolidation', 'Edema', 'Emphysema', 'Fibrosis',
+    'Pleural_Thickening', 'Hernia'
+]
+NUM_CLASSES = len(ALL_LABELS)
+
+# ============================================================
+# HYPERPARAMETERS
+# ============================================================
+
+# Training parameters
+BATCH_SIZE = 32
+NUM_WORKERS = 4  # Use 0 on Windows if issues occur
+PHASE1_EPOCHS = 5
+PHASE2_EPOCHS = 20
+
+# Learning rates
+PHASE1_LR = 1e-3
+PHASE2_LR = 1e-5
+
+# Model parameters
+IMAGE_SIZE = 224
+RESIZE_SIZE = 256
+NORMALIZATION_MEAN = [0.485, 0.456, 0.406]
+NORMALIZATION_STD = [0.229, 0.224, 0.225]
+
+# Validation thresholds
+VALIDATION_THRESHOLDS = (0.0, 1.05, 0.05)  # (start, end, step)
+
+# Dropout rate
+DROPOUT_RATE = 0.3
+HIDDEN_SIZE = 512
+
+# ============================================================
+# DEVICE CONFIGURATION
+# ============================================================
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def print_device_info():
+    """Print information about the current device"""
+    if torch.cuda.is_available():
+        print(f"✓ CUDA is available")
+        print(f"  GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        print("⚠ Running on CPU. Consider using GPU for faster training.")

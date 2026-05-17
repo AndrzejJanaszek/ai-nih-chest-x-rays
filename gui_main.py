@@ -99,14 +99,38 @@ class ChestXrayDiagnosisGUI:
     
     def build_gui(self):
         """Build the GUI layout"""
-        # Main frame with scrollbar support
-        main_frame = tk.Frame(self.root, bg='white')
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Create Canvas and Scrollbar for main application
+        canvas = tk.Canvas(self.root, bg='white', highlightthickness=0)
+        scrollbar = tk.Scrollbar(self.root, orient=tk.VERTICAL, command=canvas.yview)
+        
+        # Main frame that will be inside canvas
+        main_frame = tk.Frame(canvas, bg='white')
+        main_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        # Create window in canvas
+        canvas.create_window((0, 0), window=main_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack canvas and scrollbar
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Enable mousewheel scrolling
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+        
+        # Continue with regular frame packing inside main_frame
+        main_frame_content = tk.Frame(main_frame, bg='white')
+        main_frame_content.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # ============================================================
         # TITLE
         # ============================================================
-        title_frame = tk.Frame(main_frame, bg='#2c3e50')
+        title_frame = tk.Frame(main_frame_content, bg='#2c3e50')
         title_frame.pack(fill=tk.X, pady=(0, 10))
         
         title_label = tk.Label(
@@ -123,7 +147,7 @@ class ChestXrayDiagnosisGUI:
         # FILE SELECTION SECTION
         # ============================================================
         file_frame = tk.LabelFrame(
-            main_frame, 
+            main_frame_content, 
             text="Step 1: Load X-ray Image", 
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
@@ -177,7 +201,7 @@ class ChestXrayDiagnosisGUI:
         # IMAGE PREVIEW SECTION
         # ============================================================
         image_frame = tk.LabelFrame(
-            main_frame,
+            main_frame_content,
             text="Step 2: Image Preview",
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
@@ -201,7 +225,7 @@ class ChestXrayDiagnosisGUI:
         # DIAGNOSIS SECTION
         # ============================================================
         diagnosis_frame = tk.LabelFrame(
-            main_frame,
+            main_frame_content,
             text="Step 3: Run Diagnosis",
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
@@ -228,7 +252,7 @@ class ChestXrayDiagnosisGUI:
         # RESULTS SECTION
         # ============================================================
         results_frame = tk.LabelFrame(
-            main_frame,
+            main_frame_content,
             text="Step 4: Diagnostic Results",
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
@@ -238,20 +262,20 @@ class ChestXrayDiagnosisGUI:
         results_frame.pack(fill=tk.BOTH, expand=True, pady=10)
         
         # Create canvas with scrollbar for results
-        canvas = tk.Canvas(results_frame, bg='white', highlightthickness=0)
-        scrollbar = tk.Scrollbar(results_frame, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg='white')
+        results_canvas = tk.Canvas(results_frame, bg='white', highlightthickness=0)
+        results_scrollbar = tk.Scrollbar(results_frame, orient=tk.VERTICAL, command=results_canvas.yview)
+        scrollable_frame = tk.Frame(results_canvas, bg='white')
         
         scrollable_frame.bind(
             "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            lambda e: results_canvas.configure(scrollregion=results_canvas.bbox("all"))
         )
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        results_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        results_canvas.configure(yscrollcommand=results_scrollbar.set)
         
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        results_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        results_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.results_container = scrollable_frame
         
@@ -269,7 +293,7 @@ class ChestXrayDiagnosisGUI:
         # ============================================================
         # BOTTOM BUTTONS
         # ============================================================
-        bottom_frame = tk.Frame(main_frame, bg='white')
+        bottom_frame = tk.Frame(main_frame_content, bg='white')
         bottom_frame.pack(fill=tk.X, pady=10)
         
         exit_btn = tk.Button(

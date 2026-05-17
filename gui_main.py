@@ -105,14 +105,19 @@ class ChestXrayDiagnosisGUI:
         
         # Main frame that will be inside canvas
         main_frame = tk.Frame(canvas, bg='white')
-        main_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
         
         # Create window in canvas
-        canvas.create_window((0, 0), window=main_frame, anchor="nw")
+        window_id = canvas.create_window((0, 0), window=main_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Update canvas scrollregion and window width
+        def on_frame_configure(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            # Set canvas window width to match canvas width
+            canvas.itemconfig(window_id, width=canvas.winfo_width())
+        
+        main_frame.bind("<Configure>", on_frame_configure)
+        canvas.bind("<Configure>", on_frame_configure)
         
         # Pack canvas and scrollbar
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

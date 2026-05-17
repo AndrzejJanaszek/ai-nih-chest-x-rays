@@ -11,11 +11,16 @@ from pathlib import Path
 # PATHS CONFIGURATION
 # ============================================================
 
-# Get the project root directory
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-SRC_DIR = os.path.join(PROJECT_ROOT, 'src')
+# Get the refactored_src directory (current directory)
+REFACTORED_SRC_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Data paths
+# Get the main project root directory (parent of refactored_src)
+PROJECT_ROOT = os.path.abspath(os.path.join(REFACTORED_SRC_DIR, '..'))
+
+# Use refactored_src as the directory for checkpoints and training validations
+SRC_DIR = REFACTORED_SRC_DIR
+
+# Data paths (point to main project data folder)
 DATA_PATH = os.path.join(PROJECT_ROOT, 'data')
 IMAGES_PATH = os.path.join(DATA_PATH, 'rescaled_data')
 CSV_FILE_PATH = os.path.join(DATA_PATH, 'Data_Entry_2017.csv')
@@ -50,7 +55,7 @@ NUM_CLASSES = len(ALL_LABELS)
 
 # Training parameters
 BATCH_SIZE = 32
-NUM_WORKERS = 4  # Use 0 on Windows if issues occur
+NUM_WORKERS = 4  # Use 0 on Windows to avoid multiprocessing issues
 PHASE1_EPOCHS = 5
 PHASE2_EPOCHS = 20
 
@@ -59,7 +64,7 @@ PHASE1_LR = 1e-3
 PHASE2_LR = 1e-5
 
 # Model parameters
-IMAGE_SIZE = 256
+IMAGE_SIZE = 224
 RESIZE_SIZE = 256
 NORMALIZATION_MEAN = [0.485, 0.456, 0.406]
 NORMALIZATION_STD = [0.229, 0.224, 0.225]

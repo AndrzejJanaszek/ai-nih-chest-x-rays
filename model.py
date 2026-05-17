@@ -23,11 +23,7 @@ def create_densenet121_model(device, num_classes=NUM_CLASSES):
     weights = models.DenseNet121_Weights.IMAGENET1K_V1
     model = models.densenet121(weights=weights)
 
-    # Freeze all weights (Phase 1)
-    for param in model.parameters():
-        param.requires_grad = False
-
-    # Replace classifier with custom head
+    # Replace classifier with custom head (before freezing!)
     num_features = model.classifier.in_features
     model.classifier = nn.Sequential(
         nn.Linear(num_features, HIDDEN_SIZE),
@@ -43,19 +39,23 @@ def create_densenet121_model(device, num_classes=NUM_CLASSES):
     return model
 
 
-def freeze_model_weights(model):
+def freeze_feature_extractor(model):
     """
-    Freeze all model weights (for Phase 1 training).
+    Freeze feature extractor weights, keep classifier trainable (for Phase 1 training).
     
     Args:
-        model: PyTorch model
+        model: PyTorch model (DenseNet-121)
     """
-    for param in model.parameters():
+    # Freeze all features (DenseNet-121 feature extractor)
+    for param in model.features.parameters():
         param.requires_grad = False
-    print("✓ Model weights frozen")
+    # Keep classifier trainable
+    for param in model.classifier.parameters():
+        param.requires_grad = True
+    print("✓ Feature extractor frozen, classifier trainable")
 
 
-def unfreeze_model_weights(model):
+def unfreeze_all_weights(model):
     """
     Unfreeze all model weights (for Phase 2 fine-tuning).
     
@@ -64,7 +64,7 @@ def unfreeze_model_weights(model):
     """
     for param in model.parameters():
         param.requires_grad = True
-    print("✓ Model weights unfrozen")
+    print("✓ All model weights unfrozen")
 
 
 def get_class_weights(df, labels_list, device):

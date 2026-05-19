@@ -206,7 +206,11 @@ def validate_and_plot_roc(model, val_loader, criterion, device, labels, output_d
     print("\nPlotting ROC curves...")
     num_classes = len(labels)
     
-    fig, axes = plt.subplots(2, 4, figsize=(16, 10))
+    # Calculate grid dimensions dynamically
+    cols = 4
+    rows = (num_classes + cols - 1) // cols  # Ceiling division
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(16, 4 * rows))
     axes = axes.flatten()
     
     fpr_dict = {}
@@ -231,6 +235,10 @@ def validate_and_plot_roc(model, val_loader, criterion, device, labels, output_d
         axes[i].set_title(f'ROC Curve - {labels[i]}')
         axes[i].legend(loc="lower right")
         axes[i].grid(alpha=0.3)
+    
+    # Hide unused subplots
+    for i in range(num_classes, len(axes)):
+        axes[i].set_visible(False)
     
     plt.tight_layout()
     

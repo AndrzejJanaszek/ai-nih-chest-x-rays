@@ -44,8 +44,10 @@ VALIDATION_THRESHOLDS_DIR = os.path.join(SRC_DIR, 'validation_thresholds')
 # ============================================================
 
 ALL_LABELS = [
-    'Atelectasis', 'Effusion', 'Infiltration', 'Mass',
-    'Nodule', 'Pneumothorax', 'Consolidation', 'Pleural_Thickening'
+    'Atelectasis', 'Cardiomegaly', 'Consolidation', 'Edema',
+    'Effusion', 'Emphysema', 'Fibrosis', 'Infiltration',
+    'Mass', 'Nodule', 'Pleural_Thickening', 'Pneumonia',
+    'Pneumothorax', 'Hernia'
 ]
 NUM_CLASSES = len(ALL_LABELS)
 

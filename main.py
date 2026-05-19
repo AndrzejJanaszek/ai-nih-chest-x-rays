@@ -138,7 +138,7 @@ def main():
     #     optimizer=optimizer_phase_2,
     #     device=DEVICE,
     #     scheduler=scheduler,
-    #     num_epochs=20,
+    #     num_epochs=15,
     #     checkpoint_dir=PHASE2_CHECKPOINTS,
     #     validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase2'),
     #     start_epoch=5
@@ -155,17 +155,17 @@ def main():
     model, _, _, epoch, loss = load_checkpoint(checkpoint_path, model, optimizer=None, scheduler=None, device=DEVICE)
     
     # Uncomment below to run threshold range validation:
-    # ensure_directories_exist([VALIDATION_THRESHOLDS_DIR])
-    # validate_epoch_threshold_range(
-    #     model=model,
-    #     val_loader=val_loader,
-    #     criterion=criterion,
-    #     device=DEVICE,
-    #     epoch_num=20,
-    #     checkpoint_dir=PHASE2_CHECKPOINTS,
-    #     validation_dir=VALIDATION_THRESHOLDS_DIR,
-    #     num_classes=NUM_CLASSES
-    # )
+    ensure_directories_exist([VALIDATION_THRESHOLDS_DIR])
+    validate_epoch_threshold_range(
+        model=model,
+        val_loader=val_loader,
+        criterion=criterion,
+        device=DEVICE,
+        epoch_num=20,
+        checkpoint_dir=PHASE2_CHECKPOINTS,
+        validation_dir=VALIDATION_THRESHOLDS_DIR,
+        num_classes=NUM_CLASSES
+    )
 
     # Validate model and plot ROC curves
     results = validate_and_plot_roc(

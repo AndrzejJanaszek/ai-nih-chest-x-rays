@@ -56,7 +56,7 @@ NUM_CLASSES = len(ALL_LABELS)
 # ============================================================
 
 # Training parameters
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 NUM_WORKERS = 4  # Use 0 on Windows to avoid multiprocessing issues
 PHASE1_EPOCHS = 5
 PHASE2_EPOCHS = 20
@@ -64,6 +64,9 @@ PHASE2_EPOCHS = 20
 # Learning rates
 PHASE1_LR = 1e-3
 PHASE2_LR = 1e-5
+
+# Mixed Precision Training (AMP)
+USE_AMP = True  # Enable Automatic Mixed Precision if CUDA is available
 
 # Model parameters
 IMAGE_SIZE = 224

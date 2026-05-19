@@ -11,7 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (
-    DEVICE, ALL_LABELS, NUM_CLASSES, PHASE1_LR, PHASE2_LR,
+    DEVICE, ALL_LABELS, NUM_CLASSES, PHASE1_LR, PHASE2_LR, USE_AMP,
     PHASE1_CHECKPOINTS, PHASE2_CHECKPOINTS,
     TRAINING_VALIDATIONS_DIR, VALIDATION_THRESHOLDS_DIR,
     IMAGES_PATH, CSV_FILE_PATH, TRAIN_LIST_PATH, VAL_LIST_PATH,
@@ -115,7 +115,8 @@ def main():
     #     num_epochs=5,
     #     checkpoint_dir=PHASE1_CHECKPOINTS,
     #     validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase1'),
-    #     start_epoch=0
+    #     start_epoch=0,
+    #     use_amp=USE_AMP
     # )
 
     # ============================================================
@@ -123,6 +124,13 @@ def main():
     # ============================================================
     print("\n[5/5] Phase 2: Fine-tuning entire model (optional)...")
     print("⚠ Phase 2 training is commented out. Uncomment in main() if desired.")
+
+    # ##################################
+    # # wczytanie epoki 5 treningu !
+    # #! TMP
+    # checkpoint_path = os.path.join(PHASE1_CHECKPOINTS, 'checkpoint_epoch_5.pt')
+    # model, _, _, epoch, loss = load_checkpoint(checkpoint_path, model, optimizer=None, scheduler=None, device=DEVICE)
+
 
     # Uncomment below to run Phase 2 training:
     # print("\nUnfreezing model for Phase 2...")
@@ -141,7 +149,8 @@ def main():
     #     num_epochs=15,
     #     checkpoint_dir=PHASE2_CHECKPOINTS,
     #     validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase2'),
-    #     start_epoch=5
+    #     start_epoch=5,
+    #     use_amp=USE_AMP
     # )
 
     # ============================================================

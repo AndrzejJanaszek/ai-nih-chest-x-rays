@@ -68,6 +68,9 @@ PHASE2_LR = 1e-5
 # Mixed Precision Training (AMP)
 USE_AMP = True  # Enable Automatic Mixed Precision if CUDA is available
 
+# Gradient Accumulation
+GRADIENT_ACCUMULATION_STEPS = 4
+
 # Model parameters
 IMAGE_SIZE = 224
 RESIZE_SIZE = 256

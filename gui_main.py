@@ -10,6 +10,7 @@ import torch
 import torch.nn.functional as F
 import os
 import sys
+import pandas as pd
 from pathlib import Path
 
 # Add current directory to path for imports
@@ -46,6 +47,10 @@ class ChestXrayDiagnosisGUI:
         self.image_path = None
         self.current_image = None
         self.checkpoint_epoch = checkpoint_epoch
+        self.csv_data = None
+        
+        # Load CSV data
+        self.load_csv_data()
         
         # Load model
         print(f"\n[Loading Model] Checkpoint epoch: {self.checkpoint_epoch}")
@@ -55,6 +60,60 @@ class ChestXrayDiagnosisGUI:
         self.build_gui()
         
         print("✓ GUI ready")
+    
+    def load_csv_data(self):
+        """Load CSV data with ground truth labels"""
+        try:
+            csv_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                'data',
+                'Data_Entry_2017.csv'
+            )
+            
+            if not os.path.exists(csv_path):
+                raise FileNotFoundError(f"CSV file not found: {csv_path}")
+            
+            print(f"Loading CSV data from: {csv_path}")
+            self.csv_data = pd.read_csv(csv_path)
+            print(f"✓ CSV data loaded ({len(self.csv_data)} records)")
+            
+        except Exception as e:
+            print(f"✗ Warning: Could not load CSV data: {e}")
+            print("  Ground truth labels will not be available")
+            self.csv_data = None
+    
+    def get_ground_truth_labels(self, image_name):
+        """
+        Get ground truth labels from CSV for the given image name.
+        
+        Args:
+            image_name: The image file name (e.g., "00000001_000.png")
+            
+        Returns:
+            List of ground truth labels, or empty list if not found
+        """
+        if self.csv_data is None:
+            return []
+        
+        try:
+            # Remove any directory path and get just the filename
+            image_name = os.path.basename(image_name)
+            
+            # Find the record in CSV
+            record = self.csv_data[self.csv_data['Image Index'] == image_name]
+            
+            if record.empty:
+                return []
+            
+            # Get the Finding Labels and split by '|'
+            labels_str = record.iloc[0]['Finding Labels']
+            labels = [label.strip() for label in str(labels_str).split('|')]
+            
+            return labels
+        
+        except Exception as e:
+            print(f"Error getting ground truth labels: {e}")
+            return []
     
     def load_model(self):
         """Load model from checkpoint"""
@@ -399,8 +458,11 @@ class ChestXrayDiagnosisGUI:
             # Get predictions
             pred_values = predictions[0].cpu().numpy()
             
+            # Get ground truth labels from CSV
+            ground_truth_labels = self.get_ground_truth_labels(self.image_path)
+            
             # Display results
-            self.display_results(pred_values)
+            self.display_results(pred_values, ground_truth_labels)
             
             # Restore button
             self.diagnose_btn.config(state=tk.NORMAL, text="🔍 Analyze Image")
@@ -409,8 +471,8 @@ class ChestXrayDiagnosisGUI:
             messagebox.showerror("Analysis Error", f"Failed to analyze image:\n{e}")
             self.diagnose_btn.config(state=tk.NORMAL, text="🔍 Analyze Image")
     
-    def display_results(self, predictions):
-        """Display diagnostic results"""
+    def display_results(self, predictions, ground_truth_labels=None):
+        """Display diagnostic results with predictions and ground truth labels"""
         # Clear previous results
         for widget in self.results_container.winfo_children():
             widget.destroy()
@@ -425,6 +487,41 @@ class ChestXrayDiagnosisGUI:
         )
         header.pack(pady=(10, 5), padx=10, anchor=tk.W)
         
+        # Display ground truth labels if available
+        if ground_truth_labels:
+            gt_frame = tk.Frame(self.results_container, bg='#e8f8f5', relief=tk.SOLID, borderwidth=1)
+            gt_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
+            
+            gt_title = tk.Label(
+                gt_frame,
+                text="✓ Ground Truth (CSV Labels):",
+                font=("Arial", 10, "bold"),
+                bg='#e8f8f5',
+                fg='#16a085'
+            )
+            gt_title.pack(anchor=tk.W, padx=10, pady=(8, 2))
+            
+            gt_text = tk.Label(
+                gt_frame,
+                text=" | ".join(ground_truth_labels),
+                font=("Arial", 10),
+                bg='#e8f8f5',
+                fg='#27ae60',
+                wraplength=600,
+                justify=tk.LEFT
+            )
+            gt_text.pack(anchor=tk.W, padx=10, pady=(2, 8))
+        
+        # Add predictions header
+        pred_title = tk.Label(
+            self.results_container,
+            text="🔮 Model Predictions:",
+            font=("Arial", 10, "bold"),
+            bg='white',
+            fg='#2c3e50'
+        )
+        pred_title.pack(pady=(10, 5), padx=10, anchor=tk.W)
+        
         # Sort predictions by confidence (descending)
         sorted_indices = sorted(range(len(predictions)), key=lambda i: predictions[i], reverse=True)
         
@@ -433,18 +530,22 @@ class ChestXrayDiagnosisGUI:
             label_name = ALL_LABELS[idx]
             confidence = predictions[idx]
             
+            # Highlight if this label is in ground truth
+            is_in_ground_truth = (ground_truth_labels and label_name in ground_truth_labels)
+            
             # Create frame for each result
             result_frame = tk.Frame(self.results_container, bg='#f0f0f0', relief=tk.FLAT)
             result_frame.pack(fill=tk.X, padx=10, pady=5)
             
             # Label name and rank
+            label_text_prefix = "✓ " if is_in_ground_truth else "  "
             label_text = tk.Label(
                 result_frame,
-                text=f"{rank}. {label_name}",
+                text=f"{label_text_prefix}{rank}. {label_name}",
                 font=("Arial", 10, "bold"),
                 bg='#f0f0f0',
-                fg='#2c3e50',
-                width=25,
+                fg='#16a085' if is_in_ground_truth else '#2c3e50',
+                width=28,
                 anchor=tk.W
             )
             label_text.pack(side=tk.LEFT, padx=10, pady=5)
@@ -466,13 +567,15 @@ class ChestXrayDiagnosisGUI:
             bar_frame = tk.Frame(result_frame, bg='white', height=20)
             bar_frame.pack(fill=tk.X, padx=10, pady=5)
             
-            # Determine color based on confidence
-            if confidence >= 0.7:
-                bar_color = '#e74c3c'  # Red - high confidence
+            # Determine color based on confidence and whether it's ground truth
+            if is_in_ground_truth:
+                bar_color = '#16a085'  # Green - correct
+            elif confidence >= 0.7:
+                bar_color = '#e74c3c'  # Red - high confidence but wrong
             elif confidence >= 0.4:
                 bar_color = '#f39c12'  # Orange - medium confidence
             else:
-                bar_color = '#27ae60'  # Green - low confidence
+                bar_color = '#95a5a6'  # Gray - low confidence
             
             bar_width = int(percentage * 2)  # Scale to max 200px
             bar = tk.Canvas(
@@ -492,13 +595,18 @@ class ChestXrayDiagnosisGUI:
         max_confidence = predictions[max_idx]
         max_label = ALL_LABELS[max_idx]
         
-        summary_text = f"⭐ Primary Finding: {max_label} ({max_confidence*100:.1f}% confidence)"
+        # Check if top prediction is in ground truth
+        is_top_correct = (ground_truth_labels and max_label in ground_truth_labels)
+        top_icon = "⭐" if is_top_correct else "📊"
+        summary_color = '#16a085' if is_top_correct else '#e74c3c' if max_confidence >= 0.7 else '#f39c12'
+        
+        summary_text = f"{top_icon} Primary Finding: {max_label} ({max_confidence*100:.1f}% confidence)"
         summary_label = tk.Label(
             summary_frame,
             text=summary_text,
             font=("Arial", 11, "bold"),
             bg='white',
-            fg='#e74c3c' if max_confidence >= 0.7 else '#f39c12',
+            fg=summary_color,
             wraplength=600,
             justify=tk.LEFT,
             pady=10,

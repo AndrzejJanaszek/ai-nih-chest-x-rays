@@ -17,7 +17,8 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (
-    DEVICE, ALL_LABELS, NUM_CLASSES, PHASE2_CHECKPOINTS,
+    DEVICE, ALL_LABELS, NUM_CLASSES, FINAL_MODELS_DIR, 
+    FINAL_MODEL_VARIANT, FINAL_MODEL_EPOCH,
     print_device_info, DISEASE_THRESHOLDS
 )
 from model import create_densenet121_model
@@ -28,17 +29,17 @@ from transforms import get_val_transforms
 class ChestXrayDiagnosisGUI:
     """GUI Application for X-ray Diagnosis"""
     
-    def __init__(self, root, checkpoint_epoch=20):
+    def __init__(self, root, checkpoint_epoch=None):
         """
         Initialize the GUI application.
         
         Args:
             root: Tkinter root window
-            checkpoint_epoch: Which epoch checkpoint to load (default: 20)
+            checkpoint_epoch: Which epoch checkpoint to load (default: from config FINAL_MODEL_EPOCH)
         """
         self.root = root
         self.root.title("Chest X-ray Classification System")
-        self.root.geometry("900x1000")
+        self.root.geometry("1400x900")
         self.root.resizable(True, True)
         
         # Initialize variables
@@ -46,14 +47,14 @@ class ChestXrayDiagnosisGUI:
         self.transform = None
         self.image_path = None
         self.current_image = None
-        self.checkpoint_epoch = checkpoint_epoch
+        self.checkpoint_epoch = checkpoint_epoch if checkpoint_epoch is not None else FINAL_MODEL_EPOCH
         self.csv_data = None
         
         # Load CSV data
         self.load_csv_data()
         
         # Load model
-        print(f"\n[Loading Model] Checkpoint epoch: {self.checkpoint_epoch}")
+        print(f"\n[Loading Model] Variant: {FINAL_MODEL_VARIANT} | Epoch: {self.checkpoint_epoch}")
         self.load_model()
         
         # Build GUI
@@ -125,18 +126,21 @@ class ChestXrayDiagnosisGUI:
             self.model = create_densenet121_model(DEVICE, NUM_CLASSES)
             self.model.eval()
             
-            # Load checkpoint
+            # Load checkpoint from final models
             checkpoint_path = os.path.join(
-                PHASE2_CHECKPOINTS, 
+                FINAL_MODELS_DIR,
+                FINAL_MODEL_VARIANT,
                 f'checkpoint_epoch_{self.checkpoint_epoch}.pt'
             )
             
             if not os.path.exists(checkpoint_path):
                 raise FileNotFoundError(
                     f"Checkpoint not found: {checkpoint_path}\n"
-                    f"Available checkpoints should be in: {PHASE2_CHECKPOINTS}"
+                    f"Model variant: {FINAL_MODEL_VARIANT}\n"
+                    f"Available variants: 14_labels, 14_labels_batch64, 14_labels_batch64_accum4, 8_labels"
                 )
             
+            print(f"[Model Variant] {FINAL_MODEL_VARIANT}")
             print(f"Loading checkpoint from: {checkpoint_path}")
             self.model, _, _, epoch, loss = load_checkpoint(
                 checkpoint_path, 
@@ -157,7 +161,7 @@ class ChestXrayDiagnosisGUI:
             raise
     
     def build_gui(self):
-        """Build the GUI layout"""
+        """Build the GUI layout with two columns"""
         # Create Canvas and Scrollbar for main application
         canvas = tk.Canvas(self.root, bg='white', highlightthickness=0)
         scrollbar = tk.Scrollbar(self.root, orient=tk.VERTICAL, command=canvas.yview)
@@ -187,12 +191,12 @@ class ChestXrayDiagnosisGUI:
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         canvas.bind_all("<MouseWheel>", on_mousewheel)
         
-        # Continue with regular frame packing inside main_frame
+        # Main content frame
         main_frame_content = tk.Frame(main_frame, bg='white')
         main_frame_content.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # ============================================================
-        # TITLE
+        # TITLE (Full Width)
         # ============================================================
         title_frame = tk.Frame(main_frame_content, bg='#2c3e50')
         title_frame.pack(fill=tk.X, pady=(0, 10))
@@ -208,17 +212,27 @@ class ChestXrayDiagnosisGUI:
         title_label.pack()
         
         # ============================================================
-        # FILE SELECTION SECTION
+        # TWO COLUMN LAYOUT
         # ============================================================
+        columns_frame = tk.Frame(main_frame_content, bg='white')
+        columns_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # ============================================================
+        # LEFT COLUMN: Image Input and Controls
+        # ============================================================
+        left_column = tk.Frame(columns_frame, bg='white')
+        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=False, padx=(0, 10))
+        
+        # FILE SELECTION SECTION
         file_frame = tk.LabelFrame(
-            main_frame_content, 
+            left_column, 
             text="Step 1: Load X-ray Image", 
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
             padx=10,
             pady=10
         )
-        file_frame.pack(fill=tk.X, pady=10)
+        file_frame.pack(fill=tk.X, pady=(0, 10))
         
         button_frame = tk.Frame(file_frame, bg='#ecf0f1')
         button_frame.pack(fill=tk.X)
@@ -256,23 +270,21 @@ class ChestXrayDiagnosisGUI:
             font=("Arial", 9),
             bg='#ecf0f1',
             fg='#7f8c8d',
-            wraplength=700,
+            wraplength=300,
             justify=tk.LEFT
         )
         self.path_label.pack(fill=tk.X, pady=(10, 0))
         
-        # ============================================================
         # IMAGE PREVIEW SECTION
-        # ============================================================
         image_frame = tk.LabelFrame(
-            main_frame_content,
+            left_column,
             text="Step 2: Image Preview",
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
             padx=10,
             pady=10
         )
-        image_frame.pack(fill=tk.X, pady=10)
+        image_frame.pack(fill=tk.X, pady=(0, 10))
         
         # Use Canvas for better image display
         self.image_canvas = tk.Canvas(
@@ -285,18 +297,16 @@ class ChestXrayDiagnosisGUI:
         self.image_canvas.pack(padx=10, pady=10)
         self.image_label = None  # Placeholder for compatibility
         
-        # ============================================================
         # DIAGNOSIS SECTION
-        # ============================================================
         diagnosis_frame = tk.LabelFrame(
-            main_frame_content,
+            left_column,
             text="Step 3: Run Diagnosis",
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
             padx=10,
             pady=10
         )
-        diagnosis_frame.pack(fill=tk.X, pady=10)
+        diagnosis_frame.pack(fill=tk.X, pady=(0, 10))
         
         self.diagnose_btn = tk.Button(
             diagnosis_frame,
@@ -308,22 +318,27 @@ class ChestXrayDiagnosisGUI:
             padx=20,
             pady=10,
             cursor="hand2",
-            state=tk.DISABLED
+            state=tk.DISABLED,
+            width=30
         )
         self.diagnose_btn.pack(pady=5)
         
         # ============================================================
-        # RESULTS SECTION
+        # RIGHT COLUMN: Results Display
         # ============================================================
+        right_column = tk.Frame(columns_frame, bg='white')
+        right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        
+        # RESULTS SECTION
         results_frame = tk.LabelFrame(
-            main_frame_content,
+            right_column,
             text="Step 4: Diagnostic Results",
             font=("Arial", 11, "bold"),
             bg='#ecf0f1',
             padx=10,
             pady=10
         )
-        results_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        results_frame.pack(fill=tk.BOTH, expand=True)
         
         # Create canvas with scrollbar for results
         results_canvas = tk.Canvas(results_frame, bg='white', highlightthickness=0)
@@ -350,12 +365,12 @@ class ChestXrayDiagnosisGUI:
             bg='white',
             fg='#7f8c8d',
             justify=tk.LEFT,
-            wraplength=700
+            wraplength=400
         )
         self.results_label.pack(pady=10)
         
         # ============================================================
-        # BOTTOM BUTTONS
+        # BOTTOM BUTTONS (Full Width)
         # ============================================================
         bottom_frame = tk.Frame(main_frame_content, bg='white')
         bottom_frame.pack(fill=tk.X, pady=10)
@@ -375,7 +390,7 @@ class ChestXrayDiagnosisGUI:
         
         info_label = tk.Label(
             bottom_frame,
-            text=f"Model: DenseNet-121 (Epoch {self.checkpoint_epoch}) | Device: {DEVICE}",
+            text=f"Model: DenseNet-121 | Variant: {FINAL_MODEL_VARIANT} | Device: {DEVICE}",
             font=("Arial", 8),
             bg='white',
             fg='#7f8c8d'
@@ -701,15 +716,16 @@ class ChestXrayDiagnosisGUI:
         self.results_label.pack(pady=10)
 
 
-def main(checkpoint_epoch=20):
+def main(checkpoint_epoch=None):
     """
     Main entry point for the GUI application.
     
     Args:
-        checkpoint_epoch: Which epoch checkpoint to load (default: 20)
+        checkpoint_epoch: Which epoch checkpoint to load (default: from config FINAL_MODEL_EPOCH)
     """
     print("\n" + "=" * 60)
     print("Chest X-ray Classification GUI")
+    print(f"Model Variant: {FINAL_MODEL_VARIANT}")
     print("=" * 60)
     
     root = tk.Tk()
@@ -718,8 +734,9 @@ def main(checkpoint_epoch=20):
 
 
 if __name__ == "__main__":
-    # You can specify which epoch to load:
-    # main(checkpoint_epoch=20)  # Load epoch 20 checkpoint
-    # main(checkpoint_epoch=10)  # Load epoch 10 checkpoint
+    # Model variant is configured in config.py via FINAL_MODEL_VARIANT
+    # You can override the epoch here if needed:
+    # main(checkpoint_epoch=20)  # Load specific epoch from the configured variant
+    # main(checkpoint_epoch=21)  # Load specific epoch from the configured variant
     
-    main(checkpoint_epoch=20)  # Default to epoch 20
+    main()  # Use defaults from config.py

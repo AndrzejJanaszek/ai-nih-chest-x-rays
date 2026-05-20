@@ -34,10 +34,22 @@ TEST_LIST_PATH = os.path.join(DATA_PATH, 'test_list.txt')
 CHECKPOINTS_DIR = os.path.join(SRC_DIR, 'checkpoints')
 PHASE1_CHECKPOINTS = os.path.join(CHECKPOINTS_DIR, 'phase1')
 PHASE2_CHECKPOINTS = os.path.join(CHECKPOINTS_DIR, 'phase2')
+FINAL_MODELS_DIR = os.path.join(CHECKPOINTS_DIR, 'final_models')
 
 # Validation/Training results paths
 TRAINING_VALIDATIONS_DIR = os.path.join(SRC_DIR, 'training_validations')
 VALIDATION_THRESHOLDS_DIR = os.path.join(SRC_DIR, 'validation_thresholds')
+
+# ============================================================
+# FINAL MODEL SELECTION
+# ============================================================
+
+# Choose which final model variant to use
+# Options: '14_labels', '14_labels_batch64', '14_labels_batch64_accum4', '8_labels', 14_label_batch64_accum4_log
+FINAL_MODEL_VARIANT = '14_label_batch64_accum4_log'
+
+# Epoch to load from the selected variant
+FINAL_MODEL_EPOCH = 20
 
 # ============================================================
 # LABELS & CLASSES CONFIGURATION

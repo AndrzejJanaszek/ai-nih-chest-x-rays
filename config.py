@@ -84,6 +84,24 @@ NORMALIZATION_STD = [0.229, 0.224, 0.225]
 # Validation thresholds
 VALIDATION_THRESHOLDS = (0.0, 1.05, 0.05)  # (start, end, step)
 
+# Custom disease-specific thresholds for GUI predictions
+DISEASE_THRESHOLDS = {
+    'Atelectasis': 0.4,
+    'Cardiomegaly': 0.6,
+    'Consolidation': 0.35,
+    'Edema': 0.55,
+    'Effusion': 0.5,
+    'Emphysema': 0.35,
+    'Fibrosis': 0.35,
+    'Infiltration': 0.35,
+    'Mass': 0.45,
+    'Nodule': 0.35,
+    'Pleural_Thickening': 0.3,
+    'Pneumonia': 1.0,
+    'Pneumothorax': 0.4,
+    'Hernia': 0.85
+}
+
 # Dropout rate
 DROPOUT_RATE = 0.3
 HIDDEN_SIZE = 512

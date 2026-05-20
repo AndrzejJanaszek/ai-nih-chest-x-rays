@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (
     DEVICE, ALL_LABELS, NUM_CLASSES, PHASE2_CHECKPOINTS,
-    print_device_info
+    print_device_info, DISEASE_THRESHOLDS
 )
 from model import create_densenet121_model
 from checkpoint import load_checkpoint
@@ -512,107 +512,156 @@ class ChestXrayDiagnosisGUI:
             )
             gt_text.pack(anchor=tk.W, padx=10, pady=(2, 8))
         
-        # Add predictions header
-        pred_title = tk.Label(
-            self.results_container,
-            text="🔮 Model Predictions:",
-            font=("Arial", 10, "bold"),
-            bg='white',
-            fg='#2c3e50'
-        )
-        pred_title.pack(pady=(10, 5), padx=10, anchor=tk.W)
-        
-        # Sort predictions by confidence (descending)
-        sorted_indices = sorted(range(len(predictions)), key=lambda i: predictions[i], reverse=True)
-        
-        # Display each diagnosis
-        for rank, idx in enumerate(sorted_indices, 1):
+        # ============================================================
+        # POSITIVE FINDINGS (above threshold)
+        # ============================================================
+        positive_findings = []
+        for idx, confidence in enumerate(predictions):
             label_name = ALL_LABELS[idx]
-            confidence = predictions[idx]
-            
-            # Highlight if this label is in ground truth
-            is_in_ground_truth = (ground_truth_labels and label_name in ground_truth_labels)
-            
-            # Create frame for each result
-            result_frame = tk.Frame(self.results_container, bg='#f0f0f0', relief=tk.FLAT)
-            result_frame.pack(fill=tk.X, padx=10, pady=5)
-            
-            # Label name and rank
-            label_text_prefix = "✓ " if is_in_ground_truth else "  "
-            label_text = tk.Label(
-                result_frame,
-                text=f"{label_text_prefix}{rank}. {label_name}",
-                font=("Arial", 10, "bold"),
-                bg='#f0f0f0',
-                fg='#16a085' if is_in_ground_truth else '#2c3e50',
-                width=28,
-                anchor=tk.W
+            threshold = DISEASE_THRESHOLDS.get(label_name, 0.5)
+            if confidence >= threshold:
+                positive_findings.append((label_name, confidence, threshold, idx))
+        
+        # Sort positive findings by confidence (descending)
+        positive_findings.sort(key=lambda x: x[1], reverse=True)
+        
+        if positive_findings:
+            # Positive findings header
+            pos_header = tk.Label(
+                self.results_container,
+                text="🔴 POSITIVE FINDINGS (Above Threshold):",
+                font=("Arial", 11, "bold"),
+                bg='white',
+                fg='#c0392b'
             )
-            label_text.pack(side=tk.LEFT, padx=10, pady=5)
+            pos_header.pack(pady=(10, 5), padx=10, anchor=tk.W)
             
-            # Confidence percentage
-            percentage = confidence * 100
-            confidence_text = tk.Label(
-                result_frame,
-                text=f"{percentage:.1f}%",
-                font=("Arial", 10, "bold"),
-                bg='#f0f0f0',
-                fg='#2980b9',
-                width=10,
-                anchor=tk.E
+            # Display positive findings
+            for idx, (label_name, confidence, threshold, _) in enumerate(positive_findings, 1):
+                is_in_ground_truth = (ground_truth_labels and label_name in ground_truth_labels)
+                
+                # Create frame for each positive finding
+                result_frame = tk.Frame(self.results_container, bg='#fadbd8', relief=tk.SOLID, borderwidth=1)
+                result_frame.pack(fill=tk.X, padx=10, pady=5)
+                
+                # Left side: Label name and rank
+                left_frame = tk.Frame(result_frame, bg='#fadbd8')
+                left_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=5)
+                
+                label_text_prefix = "✓ " if is_in_ground_truth else "● "
+                label_text = tk.Label(
+                    left_frame,
+                    text=f"{label_text_prefix}{idx}. {label_name}",
+                    font=("Arial", 10, "bold"),
+                    bg='#fadbd8',
+                    fg='#922b21' if is_in_ground_truth else '#c0392b',
+                    anchor=tk.W,
+                    justify=tk.LEFT
+                )
+                label_text.pack(anchor=tk.W)
+                
+                # Threshold info
+                threshold_text = tk.Label(
+                    left_frame,
+                    text=f"Threshold: {threshold:.2f}",
+                    font=("Arial", 8),
+                    bg='#fadbd8',
+                    fg='#7f8c8d',
+                    anchor=tk.W,
+                    justify=tk.LEFT
+                )
+                threshold_text.pack(anchor=tk.W)
+                
+                # Right side: Confidence percentage
+                confidence_text = tk.Label(
+                    result_frame,
+                    text=f"{confidence*100:.1f}%",
+                    font=("Arial", 11, "bold"),
+                    bg='#fadbd8',
+                    fg='#922b21',
+                    anchor=tk.E
+                )
+                confidence_text.pack(side=tk.RIGHT, padx=10, pady=5)
+                
+                # Progress bar
+                bar_frame = tk.Frame(result_frame, bg='white', height=20)
+                bar_frame.pack(fill=tk.X, padx=10, pady=5)
+                
+                bar_color = '#922b21' if is_in_ground_truth else '#e74c3c'
+                bar_width = int(confidence * 200)  # Scale to max 200px
+                bar = tk.Canvas(
+                    bar_frame,
+                    width=bar_width,
+                    height=15,
+                    bg=bar_color,
+                    highlightthickness=0
+                )
+                bar.pack(anchor=tk.W)
+        
+        # ============================================================
+        # NEGATIVE FINDINGS (below threshold)
+        # ============================================================
+        negative_findings = []
+        for idx, confidence in enumerate(predictions):
+            label_name = ALL_LABELS[idx]
+            threshold = DISEASE_THRESHOLDS.get(label_name, 0.5)
+            if confidence < threshold:
+                negative_findings.append((label_name, confidence, threshold, idx))
+        
+        # Sort negative findings by confidence (descending)
+        negative_findings.sort(key=lambda x: x[1], reverse=True)
+        
+        if negative_findings:
+            # Negative findings header
+            neg_header = tk.Label(
+                self.results_container,
+                text="🟢 NEGATIVE FINDINGS (Below Threshold):",
+                font=("Arial", 11, "bold"),
+                bg='white',
+                fg='#27ae60'
             )
-            confidence_text.pack(side=tk.RIGHT, padx=10, pady=5)
+            neg_header.pack(pady=(15, 5), padx=10, anchor=tk.W)
             
-            # Progress bar (visual representation)
-            bar_frame = tk.Frame(result_frame, bg='white', height=20)
-            bar_frame.pack(fill=tk.X, padx=10, pady=5)
-            
-            # Determine color based on confidence and whether it's ground truth
-            if is_in_ground_truth:
-                bar_color = '#16a085'  # Green - correct
-            elif confidence >= 0.7:
-                bar_color = '#e74c3c'  # Red - high confidence but wrong
-            elif confidence >= 0.4:
-                bar_color = '#f39c12'  # Orange - medium confidence
-            else:
-                bar_color = '#95a5a6'  # Gray - low confidence
-            
-            bar_width = int(percentage * 2)  # Scale to max 200px
-            bar = tk.Canvas(
-                bar_frame,
-                width=bar_width,
-                height=15,
-                bg=bar_color,
-                highlightthickness=0
-            )
-            bar.pack(anchor=tk.W)
-        
-        # Add summary section
-        summary_frame = tk.Frame(self.results_container, bg='white', relief=tk.SOLID, borderwidth=1)
-        summary_frame.pack(fill=tk.X, padx=10, pady=(15, 5))
-        
-        max_idx = sorted_indices[0]
-        max_confidence = predictions[max_idx]
-        max_label = ALL_LABELS[max_idx]
-        
-        # Check if top prediction is in ground truth
-        is_top_correct = (ground_truth_labels and max_label in ground_truth_labels)
-        top_icon = "⭐" if is_top_correct else "📊"
-        summary_color = '#16a085' if is_top_correct else '#e74c3c' if max_confidence >= 0.7 else '#f39c12'
-        
-        summary_text = f"{top_icon} Primary Finding: {max_label} ({max_confidence*100:.1f}% confidence)"
-        summary_label = tk.Label(
-            summary_frame,
-            text=summary_text,
-            font=("Arial", 11, "bold"),
-            bg='white',
-            fg=summary_color,
-            wraplength=600,
-            justify=tk.LEFT,
-            pady=10,
-            padx=10
-        )
-        summary_label.pack(fill=tk.BOTH)
+            # Display negative findings
+            for idx, (label_name, confidence, threshold, _) in enumerate(negative_findings, 1):
+                is_in_ground_truth = (ground_truth_labels and label_name in ground_truth_labels)
+                
+                # Create frame for each negative finding
+                result_frame = tk.Frame(self.results_container, bg='#d5f4e6', relief=tk.FLAT)
+                result_frame.pack(fill=tk.X, padx=10, pady=3)
+                
+                # Left side: Label name
+                label_text = tk.Label(
+                    result_frame,
+                    text=f"{label_name}",
+                    font=("Arial", 9),
+                    bg='#d5f4e6',
+                    fg='#27ae60',
+                    width=28,
+                    anchor=tk.W
+                )
+                label_text.pack(side=tk.LEFT, padx=10, pady=3)
+                
+                # Middle: Threshold info
+                threshold_text = tk.Label(
+                    result_frame,
+                    text=f"Threshold: {threshold:.2f}",
+                    font=("Arial", 8),
+                    bg='#d5f4e6',
+                    fg='#7f8c8d'
+                )
+                threshold_text.pack(side=tk.LEFT, padx=5)
+                
+                # Right side: Confidence percentage
+                confidence_text = tk.Label(
+                    result_frame,
+                    text=f"{confidence*100:.1f}%",
+                    font=("Arial", 9),
+                    bg='#d5f4e6',
+                    fg='#27ae60',
+                    anchor=tk.E
+                )
+                confidence_text.pack(side=tk.RIGHT, padx=10, pady=3)
         
         # Add instructions for next step
         instruction_label = tk.Label(
@@ -623,6 +672,7 @@ class ChestXrayDiagnosisGUI:
             fg='#7f8c8d'
         )
         instruction_label.pack(pady=10)
+
     
     def clear_image(self):
         """Clear the current image"""

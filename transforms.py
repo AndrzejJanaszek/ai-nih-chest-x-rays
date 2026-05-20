@@ -9,7 +9,8 @@ from config import IMAGE_SIZE, RESIZE_SIZE, NORMALIZATION_MEAN, NORMALIZATION_ST
 train_transforms = transforms.Compose([
     transforms.Resize(RESIZE_SIZE),
     transforms.RandomHorizontalFlip(),  # Suitable for chest X-rays
-    transforms.RandomRotation(10),       # Patient doesn't always stand perfectly straight
+    transforms.RandomAffine(degrees=10, translate=(0.05, 0.05), scale=(0.95, 1.05)),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.CenterCrop(IMAGE_SIZE),
     transforms.ToTensor(),
     transforms.Normalize(NORMALIZATION_MEAN, NORMALIZATION_STD)

@@ -12,13 +12,15 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (
     DEVICE, ALL_LABELS, NUM_CLASSES, PHASE1_LR, PHASE2_LR, USE_AMP, GRADIENT_ACCUMULATION_STEPS,
+    WEIGHT_TYPE, USE_WEIGHTED_SAMPLING,
     PHASE1_CHECKPOINTS, PHASE2_CHECKPOINTS,
     TRAINING_VALIDATIONS_DIR, VALIDATION_THRESHOLDS_DIR,
     IMAGES_PATH, CSV_FILE_PATH, TRAIN_LIST_PATH, VAL_LIST_PATH,
     print_device_info
 )
 from data_loader import (
-    index_images, load_image_list, load_data_with_labels, create_datasets
+    index_images, load_image_list, load_data_with_labels, create_datasets,
+    calculate_sample_weights
 )
 from transforms import get_train_transforms, get_val_transforms
 from utils import (
@@ -72,8 +74,14 @@ def main():
         get_train_transforms(), get_val_transforms()
     )
 
+    # Calculate sample weights for balanced training (rare diseases appear more often)
+    train_weights = None
+    if USE_WEIGHTED_SAMPLING:
+        print("\n[1.5/5] Calculating sample weights for balanced training...")
+        train_weights = calculate_sample_weights(train_dataset.df, ALL_LABELS, weight_type=WEIGHT_TYPE)
+
     # Create data loaders
-    train_loader, val_loader = create_data_loaders(train_dataset, val_dataset)
+    train_loader, val_loader = create_data_loaders(train_dataset, val_dataset, train_weights=train_weights)
 
     # ============================================================
     # STEP 2: MODEL INITIALIZATION

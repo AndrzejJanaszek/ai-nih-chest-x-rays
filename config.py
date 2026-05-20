@@ -71,6 +71,10 @@ USE_AMP = True  # Enable Automatic Mixed Precision if CUDA is available
 # Gradient Accumulation
 GRADIENT_ACCUMULATION_STEPS = 4
 
+# Weighted Sampling (balance rare diseases)
+USE_WEIGHTED_SAMPLING = True  # Enable weighted sampling for rare diseases
+WEIGHT_TYPE = 'sqrt'  # 'sqrt' for square root, 'log' for logarithm
+
 # Model parameters
 IMAGE_SIZE = 224
 RESIZE_SIZE = 256

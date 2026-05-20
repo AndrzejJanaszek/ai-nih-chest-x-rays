@@ -6,9 +6,11 @@ import os
 import glob
 import pandas as pd
 import torch
+import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
-from config import IMAGES_PATH, CSV_FILE_PATH, ALL_LABELS
+from config import IMAGES_PATH, CSV_FILE_PATH, ALL_LABELS, WEIGHT_TYPE
+
 
 class ChestXrayDataset(Dataset):
     """
@@ -43,6 +45,68 @@ class ChestXrayDataset(Dataset):
             image = self.transform(image)
 
         return image, torch.tensor(labels)
+
+
+def calculate_sample_weights(df, labels_list, weight_type='sqrt'):
+    """
+    Calculate weights for each sample based on the rarest disease assigned to it.
+    
+    This ensures rare diseases appear more frequently in batches by weighting samples
+    by their rarest disease.
+    
+    Args:
+        df: pandas DataFrame with binary label columns
+        labels_list: List of label names
+        weight_type: 'sqrt' for square root, 'log' for logarithm
+    
+    Returns:
+        numpy array of sample weights
+    """
+    # Calculate frequency of each disease
+    disease_frequencies = {}
+    for label in labels_list:
+        disease_frequencies[label] = (df[label] == 1).sum()
+    
+    print("\nDisease frequencies:")
+    for label, count in sorted(disease_frequencies.items(), key=lambda x: x[1]):
+        print(f"  {label}: {count}")
+    
+    # Calculate inverse frequencies (weights for diseases)
+    total_samples = len(df)
+    disease_weights = {}
+    for label in labels_list:
+        freq = disease_frequencies[label]
+        inv_freq = total_samples / max(freq, 1)  # Avoid division by zero
+        
+        # Apply transformation
+        if weight_type == 'sqrt':
+            disease_weights[label] = np.sqrt(inv_freq)
+        elif weight_type == 'log':
+            disease_weights[label] = np.log1p(inv_freq)  # log1p to avoid log(0)
+        else:
+            disease_weights[label] = inv_freq
+    
+    # For each sample, find the weight of its rarest disease
+    sample_weights = np.ones(len(df), dtype=np.float64)
+    
+    for idx, row in df.iterrows():
+        # Get all diseases assigned to this sample
+        assigned_diseases = [label for label in labels_list if row[label] == 1]
+        
+        if assigned_diseases:
+            # Use the weight of the rarest disease (max weight = rarest disease)
+            max_weight = max(disease_weights[disease] for disease in assigned_diseases)
+            sample_weights[idx] = max_weight
+    
+    # Normalize weights
+    sample_weights = sample_weights / sample_weights.sum() * len(sample_weights)
+    
+    print(f"\n✓ Sample weights calculated ({weight_type})")
+    print(f"  Min weight: {sample_weights.min():.4f}")
+    print(f"  Max weight: {sample_weights.max():.4f}")
+    print(f"  Mean weight: {sample_weights.mean():.4f}")
+    
+    return sample_weights
 
 
 def index_images(images_path):

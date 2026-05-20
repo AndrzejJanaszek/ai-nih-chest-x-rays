@@ -5,11 +5,12 @@ Utility functions for the training pipeline.
 import os
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from config import BATCH_SIZE, NUM_WORKERS, DEVICE
+from torch.utils.data import DataLoader, WeightedRandomSampler
+from config import BATCH_SIZE, NUM_WORKERS, DEVICE, USE_WEIGHTED_SAMPLING
 
 
-def create_data_loaders(train_dataset, val_dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, device=DEVICE):
+def create_data_loaders(train_dataset, val_dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, 
+                        device=DEVICE, train_weights=None):
     """
     Create train and validation data loaders.
     
@@ -19,16 +20,31 @@ def create_data_loaders(train_dataset, val_dataset, batch_size=BATCH_SIZE, num_w
         batch_size: Batch size
         num_workers: Number of worker processes
         device: Device (for pin_memory setting)
+        train_weights: Optional weights for training samples (for WeightedRandomSampler)
     
     Returns:
         Tuple of (train_loader, val_loader)
     """
     pin_memory = device.type == 'cuda'
 
+    # Create sampler for training data (use weighted sampler if weights provided)
+    train_sampler = None
+    train_shuffle = True
+    
+    if train_weights is not None and USE_WEIGHTED_SAMPLING:
+        train_sampler = WeightedRandomSampler(
+            weights=train_weights,
+            num_samples=len(train_weights),
+            replacement=True
+        )
+        train_shuffle = False
+        print("✓ Using WeightedRandomSampler for training data")
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        sampler=train_sampler,
+        shuffle=train_shuffle,
         num_workers=num_workers if num_workers > 0 else 0,
         persistent_workers=True if num_workers > 0 else False,
         pin_memory=pin_memory

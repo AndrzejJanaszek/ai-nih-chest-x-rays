@@ -110,23 +110,23 @@ def main():
     print("⚠ Phase 1 training is commented out. Uncomment in main() if desired.")
 
     # Uncomment below to run Phase 1 training:
-    optimizer_phase_1 = create_optimizer_for_classifier(model, PHASE1_LR)
-    ensure_directories_exist([PHASE1_CHECKPOINTS])
-    model = train_model(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        criterion=criterion,
-        optimizer=optimizer_phase_1,
-        device=DEVICE,
-        scheduler=None,
-        num_epochs=5,
-        checkpoint_dir=PHASE1_CHECKPOINTS,
-        validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase1'),
-        start_epoch=0,
-        use_amp=USE_AMP,
-        accumulation_steps=GRADIENT_ACCUMULATION_STEPS
-    )
+    # optimizer_phase_1 = create_optimizer_for_classifier(model, PHASE1_LR)
+    # ensure_directories_exist([PHASE1_CHECKPOINTS])
+    # model = train_model(
+    #     model=model,
+    #     train_loader=train_loader,
+    #     val_loader=val_loader,
+    #     criterion=criterion,
+    #     optimizer=optimizer_phase_1,
+    #     device=DEVICE,
+    #     scheduler=None,
+    #     num_epochs=5,
+    #     checkpoint_dir=PHASE1_CHECKPOINTS,
+    #     validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase1'),
+    #     start_epoch=0,
+    #     use_amp=USE_AMP,
+    #     accumulation_steps=GRADIENT_ACCUMULATION_STEPS
+    # )
 
     # ============================================================
     # STEP 5: TRAINING PHASE 2 (Optional - currently commented out)
@@ -142,26 +142,26 @@ def main():
 
 
     # Uncomment below to run Phase 2 training:
-    print("\nUnfreezing model for Phase 2...")
-    unfreeze_all_weights(model)
-    optimizer_phase_2 = create_optimizer(model, PHASE2_LR)
-    scheduler = create_scheduler(optimizer_phase_2)
-    ensure_directories_exist([PHASE2_CHECKPOINTS])
-    model = train_model(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        criterion=criterion,
-        optimizer=optimizer_phase_2,
-        device=DEVICE,
-        scheduler=scheduler,
-        num_epochs=15,
-        checkpoint_dir=PHASE2_CHECKPOINTS,
-        validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase2'),
-        start_epoch=5,
-        use_amp=USE_AMP,
-        accumulation_steps=GRADIENT_ACCUMULATION_STEPS
-    )
+    # print("\nUnfreezing model for Phase 2...")
+    # unfreeze_all_weights(model)
+    # optimizer_phase_2 = create_optimizer(model, PHASE2_LR)
+    # scheduler = create_scheduler(optimizer_phase_2)
+    # ensure_directories_exist([PHASE2_CHECKPOINTS])
+    # model = train_model(
+    #     model=model,
+    #     train_loader=train_loader,
+    #     val_loader=val_loader,
+    #     criterion=criterion,
+    #     optimizer=optimizer_phase_2,
+    #     device=DEVICE,
+    #     scheduler=scheduler,
+    #     num_epochs=15,
+    #     checkpoint_dir=PHASE2_CHECKPOINTS,
+    #     validation_dir=os.path.join(TRAINING_VALIDATIONS_DIR, 'phase2'),
+    #     start_epoch=5,
+    #     use_amp=USE_AMP,
+    #     accumulation_steps=GRADIENT_ACCUMULATION_STEPS
+    # )
 
     # ============================================================
     # STEP 6: VALIDATION WITH ROC CURVE VISUALIZATION
@@ -174,17 +174,17 @@ def main():
     model, _, _, epoch, loss = load_checkpoint(checkpoint_path, model, optimizer=None, scheduler=None, device=DEVICE)
     
     # Uncomment below to run threshold range validation:
-    ensure_directories_exist([VALIDATION_THRESHOLDS_DIR])
-    validate_epoch_threshold_range(
-        model=model,
-        val_loader=val_loader,
-        criterion=criterion,
-        device=DEVICE,
-        epoch_num=20,
-        checkpoint_dir=PHASE2_CHECKPOINTS,
-        validation_dir=VALIDATION_THRESHOLDS_DIR,
-        num_classes=NUM_CLASSES
-    )
+    # ensure_directories_exist([VALIDATION_THRESHOLDS_DIR])
+    # validate_epoch_threshold_range(
+    #     model=model,
+    #     val_loader=val_loader,
+    #     criterion=criterion,
+    #     device=DEVICE,
+    #     epoch_num=20,
+    #     checkpoint_dir=PHASE2_CHECKPOINTS,
+    #     validation_dir=VALIDATION_THRESHOLDS_DIR,
+    #     num_classes=NUM_CLASSES
+    # )
 
     # Validate model and plot ROC curves
     results = validate_and_plot_roc(
